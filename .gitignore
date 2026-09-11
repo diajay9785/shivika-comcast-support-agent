@@ -1,0 +1,7 @@
+.env
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+data/twcs.csv
+data/comcast_full_threads.csv
+venv/
