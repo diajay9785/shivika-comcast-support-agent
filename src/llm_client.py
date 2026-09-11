@@ -1,36 +1,45 @@
 """
 Single entry point for all LLM calls in the pipeline.
-Primary: Gemini (free tier). Fallback: Groq, only on rate-limit errors.
-Every call result is tagged with which model actually answered, so eval
-can report agreement/quality per judge_model separately (never pooled).
+Primary: Gemini (free tier, google-genai SDK). Fallback: Groq, on ANY
+Gemini failure (rate limit, dropped connection, timeout, etc) -- not just
+rate-limit-shaped errors, since network drops don't look like quota errors.
+Retries Gemini once before falling back, since transient drops often
+succeed on retry alone.
 """
 
 import time
-import google.generativeai as genai
+from google import genai
 from groq import Groq
 
 from config import GEMINI_API_KEY, GROQ_API_KEY
 
-genai.configure(api_key=GEMINI_API_KEY)
-_gemini_model = genai.GenerativeModel("gemini-1.5-flash")
+_gemini_client = genai.Client(api_key=GEMINI_API_KEY)
 _groq_client = Groq(api_key=GROQ_API_KEY) if GROQ_API_KEY else None
 
+GEMINI_MODEL = "gemini-3.6-flash"
+GROQ_MODEL = "openai/gpt-oss-120b"
 
-def call_llm(prompt: str, max_retries: int = 2) -> dict:
+
+def call_llm(prompt: str) -> dict:
     """
     Returns: {"text": <model output>, "model": "gemini" | "groq"}
-    Tries Gemini first. Falls back to Groq only on a rate-limit style error.
     """
-    try:
-        response = _gemini_model.generate_content(prompt)
-        return {"text": response.text, "model": "gemini"}
-    except Exception as e:
-        err = str(e).lower()
-        is_rate_limit = "quota" in err or "rate" in err or "429" in err
-        if is_rate_limit and _groq_client is not None:
+    for attempt in range(2):  # try Gemini twice before falling back
+        try:
+            response = _gemini_client.models.generate_content(
+                model=GEMINI_MODEL,
+                contents=prompt,
+            )
+            return {"text": response.text, "model": "gemini"}
+        except Exception as e:
+            if attempt == 0:
+                time.sleep(2)
+                continue
+            # both Gemini attempts failed -- fall back to Groq
+            if _groq_client is None:
+                raise
             completion = _groq_client.chat.completions.create(
-                model="llama-3.1-70b-versatile",
+                model=GROQ_MODEL,
                 messages=[{"role": "user", "content": prompt}],
             )
             return {"text": completion.choices[0].message.content, "model": "groq"}
-        raise

@@ -1,5 +1,5 @@
 pandas
 scikit-learn
 python-dotenv
-google-generativeai
+google-genai
 groq
