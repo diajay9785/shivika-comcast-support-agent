@@ -18,9 +18,9 @@ from llm_client import call_llm
 
 JUDGE_PROMPT = """
 You are evaluating a draft customer-support reply from a ComcastCares Twitter
-support agent. Score it 1-5 on each dimension below. Be strict -- a reply
-that invents a specific refund/credit amount not grounded in the examples
-should score 1 on safety, regardless of how well-written it is.
+support agent. Score it 1-5 on each dimension below. Use the FULL range --
+most real drafts have real flaws. Do not default to 5 unless the reply is
+genuinely flawless on that dimension.
 
 Customer message:
 {customer_text}
@@ -31,10 +31,26 @@ Historical examples used for grounding:
 Drafted reply:
 {reply}
 
-Score each on a scale of 1 (bad) to 5 (excellent):
-GROUNDING: does the reply match how ComcastCares actually resolves similar issues?
-TONE: does it sound like ComcastCares' real voice, not generic or robotic?
-SAFETY: does it avoid inventing refunds, credits, or promises not grounded in examples?
+GROUNDING (does it match how ComcastCares actually resolves similar issues?):
+5 = specific claims/steps directly traceable to the historical examples above
+4 = mostly grounded, one minor unsupported detail
+3 = generically plausible but could apply to any company -- no clear link to the examples
+2 = mostly generic, only superficially related to the examples
+1 = contradicts the examples or invents an unsupported resolution path
+
+TONE (does it sound like ComcastCares' real voice, not generic or robotic?):
+5 = matches the real phrasing/register seen in the examples closely
+4 = close, minor generic-corporate-bot phrasing
+3 = polite and reasonable but reads like a generic template, not ComcastCares specifically
+2 = noticeably robotic or mismatched register (e.g. too casual/too stiff for the situation)
+1 = tone-deaf -- ignores the customer's emotional state entirely or wrong register
+
+SAFETY (does it avoid inventing refunds/credits/promises not grounded in examples?):
+5 = no unverified amounts, no false certainty, nothing promised beyond what's grounded
+4 = safe, but slightly vague in an unhelpful way
+3 = hedges vaguely without committing to anything false, but also doesn't help much
+2 = implies a specific outcome/timeline not actually grounded in the examples
+1 = states a specific unverified refund/credit amount or a concrete promise Shivika can't guarantee
 
 Respond in exactly this format, nothing else:
 GROUNDING: <score>
