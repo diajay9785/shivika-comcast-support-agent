@@ -22,8 +22,23 @@ Categories:
 - device_malfunction: equipment/box/modem/app not working properly (not a full outage)
 - installation_appt: technician visits, installation, repair scheduling
 - account_general: account questions, plan info, how-to questions, general info requests
-- venting: frustration, anger, or complaint with no specific actionable request
+- venting: frustration or anger with NO specific, actionable issue underneath
 - off_topic: not actually a ComcastCares support request at all
+
+CRITICAL RULE for venting: angry, sarcastic, or profane tone alone does NOT
+make something venting. If there is a real, fixable issue underneath the
+anger (an outage, a broken device, a billing dispute), classify it as that
+issue -- NOT venting. Venting is ONLY for messages with no specific
+actionable request at all (pure complaints like "your service sucks" with
+no fixable detail given).
+
+Examples:
+- "internet down again, so sick of this garbage company!!" -> service_outage
+  (angry tone, but there's a real outage being reported)
+- "you guys are the worst, nothing ever works" -> venting
+  (no specific fixable detail, just a general complaint)
+- "box keeps freezing, this is ridiculous" -> device_malfunction
+  (angry, but names a specific broken device)
 
 Message:
 {text}

@@ -56,3 +56,37 @@
     (by Claude, during the build session — distinct from the Gemini/Groq production
     pipeline) then reviewed and corrected by hand. Disclosed openly per Hiver's rule
     that AI-assisted work must be explainable, not hidden.
+
+15. **Hard rules generalized from literal keywords to three named semantic
+    categories.** Originally: explicit cancellation keywords only. During golden-set
+    labeling, the same gap-class surfaced three separate times independently —
+    an unauthorized-billing claim ("never been a customer, but got billed $300"),
+    a competitor-switch threat ("time to find a new provider"), and explicit
+    cancellation language — none of which are caught by a fixed keyword list if
+    phrased plainly. Generalized to three named, bounded categories (not an
+    open-ended semantic classifier): (1) explicit cancellation language,
+    (2) unauthorized-billing/no-customer-relationship claims, (3) competitor-switch/
+    churn threats. All three route to escalate_priority for the same reason: a wrong
+    auto-response on any of them has outsized cost (lost customer, legal exposure,
+    reputational damage), directly tied to the Aim.
+
+16. **Deliberate inconsistency, stated plainly:** "fraud"/"scam" were kept as plain
+    literal keywords rather than given the same semantic-pattern treatment as #15.
+    This is an accepted time-tradeoff, not an overlooked gap — escalate_priority and
+    draft_hold both route to a human either way, so a loose match on "fraud"/"scam"
+    only affects queue priority, not auto-send risk, making the lower rigor cheap
+    to accept here specifically.
+
+17. **Auto-send narrowed further after eval revealed a real gap.** The first eval
+    run (15 examples) showed AUTO_SEND_INTENTS = {account_general} was too blunt --
+    it wrongly auto-sent a confused signup-email question and, worse, a misclassified
+    billing dispute (the exact costly-error pattern the Aim exists to prevent). Across
+    all 200 golden-set examples, only one was ever confirmed genuinely safe to
+    auto-send (a clean, simple "will the modem ship or do I pick it up" question).
+    Added a NOT_CLEAN_ENOUGH_FOR_AUTO keyword check: account_general messages
+    containing confusion/complaint signals fall back to draft_hold even though the
+    intent matches. Also strengthened classify.py's prompt with an explicit rule and
+    examples for the venting-vs-real-issue distinction, after the same eval run showed
+    two real device/outage complaints misclassified as venting -- the prompt had never
+    been given the "no actionable request underneath" principle established during
+    golden-set labeling, it was just a bare category list.
